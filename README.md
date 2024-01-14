@@ -1,6 +1,6 @@
 # Gender-Detection
 
-![](/uploads/upload_7b380c5184397afb427a7d0b8981a7d0.gif)
+![](media/demo.gif)
 
 
 
@@ -14,7 +14,7 @@ First, all the human faces are found in the provided image using the pretrained 
 Several classification models are used during the project experiments: Resnet18, Resnet34, Resnet50, EfficientNet_b0, EfficientNet_b1. It was seen that the **EfficientNet_b1** model provided better results both in the test dataset and in real-life images. Some figures related to performance evaluation of the EffientNet_b1 model can be seen below
 
 
-| ![](/uploads/upload_edaf45af4133a6db9148558f4a39e0de.jpg) | ![](/uploads/upload_00e0ca2eed66c2ed22485f73b9616150.jpg) | ![](/uploads/upload_5e645526959d4ec1fa2f49d038517e60.jpg) |
+| ![](media/confusion_matrix.jpg) | ![](media/precision_recall_curve.jpg) | ![](media/acc_precision_recall_f1.jpg) |
 | :---------------------------------------------------------: | :---------------------------------------------------------: | :---------------------------------------------------------: |
 | Confusion Martix Result                                   | Precision and Recall Curve                                | Accuracy, Precision, Recall, and F1-Score                 | 
 
