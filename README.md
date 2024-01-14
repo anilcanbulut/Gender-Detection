@@ -1,7 +1,8 @@
 # Gender-Detection
 
-![](media/demo.gif)
-
+<div align="center">
+  <img src="media/demo.gif" alt="">
+</div>
 
 
 In this repository, you can find a human gender detection implementation. The overall system consists of two main parts: 
@@ -48,7 +49,11 @@ Everything is handled inside the configuration file in the [configs](https://git
 ```bash
 python main.py
 ```
-Once the testing is finished, model's performance evaluation plots are going to be stored in the "exps" folder.
+Once the testing is finished, model's performance evaluation plots are going to be stored in the "exps" folder. Also, if you want to make real-time test, you can use the **realtime.py** script. It has the "--source" parameter that you can either pass a video or provide the ID of your webcam e.g. 0.
+
+```bash
+python realtime.py --source 0
+```
 
 # Train
 First download the dataset from this [link](https://drive.google.com/file/d/1UaSOojfcxN--A3GyeHz8gR4hfjZa1SWD/view?usp=drive_link). It will already contain train, valid, and test folders. You can directly start a training with the default model.
