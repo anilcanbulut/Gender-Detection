@@ -1,0 +1,8 @@
+torch
+packaging
+torchvision
+tensorboard
+tqdm
+scikit-learn
+pyyaml
+ultralytics
