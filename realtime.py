@@ -25,6 +25,7 @@ def main(args):
         print(f"Couldn't read from the source {source}")
         return -1
 
+    engine.model.eval()
     while True:
         t_start = time.time()
         ret, frame = cap.read()
@@ -47,7 +48,7 @@ def main(args):
             x1, y1 = int(xc - w/2), int(yc - h/2)
             x2, y2 = int(xc + w/2), int(yc + h/2)
 
-            offset_w, offset_h = int(w*0.2), int(h*0.2)       
+            offset_w, offset_h = int(w*0.3), int(h*0.3)       
             
             x1_ = max(0, (x1 - offset_w))
             y1_ = max(0, (y1 - offset_h))
@@ -65,13 +66,19 @@ def main(args):
             outputs = engine.model(processed_face)
             t_genderdet_end = time.time()
             
-            predictions = (torch.sigmoid(outputs) > 0.5).int()
+            # predictions = (torch.sigmoid(outputs) > 0.5).int()
+            a = torch.sigmoid(outputs)
+            predictions = torch.argmax(a, axis=1)
 
-            label_id = predictions[0, 0]
-            conf = torch.softmax(outputs, dim=1)[0, 0]
+            # label_id = predictions[0, 0]
+            label_id = predictions[0]
+            conf = a[0, label_id]
 
-            new_frame = cv2.putText(new_frame, f'{LABELS[label_id]} {conf:.2f}', (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 2, cv2.LINE_AA)
-            cv2.rectangle(new_frame, (x1_, y1_), (x2_, y2_), (0, 255, 0), 2)
+            cv2.rectangle(new_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            offset_1, offset_2 = int(h*0.08), int(h*0.06)
+            cv2.rectangle(new_frame, (x1, y1), (x2, y1+offset_1), (0, 255, 0), -1)
+            new_frame = cv2.putText(new_frame, f'{LABELS[label_id]} {conf:.2f}', (x1, y1+offset_2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
+            
 
         cv2.imshow("Output", new_frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
