@@ -1,0 +1,11 @@
+TRAINING:
+  N_EPOCHS: 500
+TESTING:
+
+GENERAL:
+  MODE: "test"
+  PROJECT_ROOT: "."
+  INPUT_W: 100
+  INPUT_H: 100
+  BATCH_SIZE: 128
+  PRETRAINED_MODEL: "exps/exp_14/weights/efficientnet_b1_48epochs.pth" 
