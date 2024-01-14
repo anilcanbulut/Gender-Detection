@@ -49,7 +49,7 @@ Everything is handled inside the configuration file in the [configs](https://git
 ```bash
 python main.py
 ```
-Once the testing is finished, model's performance evaluation plots are going to be stored in the "exps" folder. Also, if you want to make real-time test, you can use the **realtime.py** script. It has the "--source" parameter that you can either pass a video or provide the ID of your webcam e.g. 0.
+Once the testing is finished, model's performance evaluation plots are going to be stored in the "exps" folder. Also, if you want to make real-time test, you can use the **realtime.py** script. It has the "--source" parameter that you can either pass a video or provide the ID of your webcam e.g. 0. The overall process takes about 45 ms (10 ms for face detection and 10 ms for gender detection and reading frame from camera takes about 25 ms strangely) where the model calculations are made in RTX3060 GPU. 
 
 ```bash
 python realtime.py --source 0
