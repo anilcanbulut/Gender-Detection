@@ -46,7 +46,9 @@ class Engine():
             self.test_loader = self.create_dataloader(split="test")
     
         self.model = self.build_model()
-        self.loss = nn.BCELoss()
+        print(self.model)
+
+        self.loss = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', patience=2)
         
@@ -66,14 +68,18 @@ class Engine():
 
         if self.pretrained_model:
             # Change the last layer of the model
-            model.classifier[1] = nn.Linear(model.classifier[1].in_features, 1)
-            
+            # model.classifier[1] = nn.Linear(model.classifier[1].in_features, 2)
+            model.fc = nn.Linear(model.fc.in_features, 2)
+
             ckpt = self.load_checkpoint(self.cfg["PRETRAINED_MODEL"])
             model = self.load_model(model, ckpt["MODEL_STATE_DICT"])
             print(f"Model was trained for {ckpt['LAST_EPOCH']} epochs.")
         else:
             if self.cfg["MODE"].lower() == "train":
-                model.classifier[1] = nn.Linear(model.classifier[1].in_features, 1)
+                # model.classifier[1] = nn.Linear(model.classifier[1].in_features, 2)
+                model.fc = nn.Linear(model.fc.in_features, 2)
+ 
+   
             print(f"Using {model_name} with Imagenet weights")
 
         if torch.cuda.is_available():
@@ -87,8 +93,8 @@ class Engine():
             - The Imagenet pretrained weights are loaded
             - Only the last layer dimension is changed to 1
         """
-        model = models.efficientnet_b1(pretrained=True)
-                
+        model = models.resnet50(pretrained=True)
+
         return model
 
     def load_model(self, model, state_dicts=None):
@@ -238,16 +244,17 @@ class Engine():
             inputs, labels = inputs.to(device), labels.to(device)
             with torch.set_grad_enabled(mode == "train"):
                 outputs = model(inputs)
-                outputs = torch.sigmoid(outputs)
+                output_probs = torch.sigmoid(outputs)
 
-                preds = (outputs > 0.5).squeeze(1).int()
+                preds = torch.argmax(output_probs, axis=1)
                 accuracy = accuracy_score(labels.cpu(), preds.cpu())
                 predictions = torch.cat((predictions, preds), dim=0)
-                confidences = torch.cat((confidences, outputs), dim=0)
+                predicted_confidences = output_probs[torch.arange(output_probs.size(0)), preds]
+                confidences = torch.cat((confidences, predicted_confidences), dim=0)
 
                 if mode != "test":
                     # Use the raw logits (outputs) for computing the loss
-                    loss = loss_func(outputs.squeeze(1), labels.float())
+                    loss = loss_func(outputs, labels)
 
                     if mode == "train":
                         loss.backward()
@@ -271,6 +278,7 @@ class Engine():
                 print(f"Resume training from epoch-{self.start_epoch}")
 
             min_acc_val = -1
+            min_loss_val = 1e5
             for epoch in range(self.start_epoch, epochs+1): 
                 current_lr = self.optimizer.param_groups[0]['lr']
 
@@ -286,13 +294,13 @@ class Engine():
                 avg_acc_train = sum(train_acc)/len(train_acc)
 
                 # Iterate 1 epoch for the validation dataset
-                out, elapsed_time_val, _, _ = self.iterate_one_epoch(data_loader=self.val_loader, 
+                out, elapsed_time_val = self.iterate_one_epoch(data_loader=self.val_loader, 
                                                                model=self.model, 
                                                                loss_func=self.loss, 
                                                                optimizer=self.optimizer, 
                                                                device=self.device, 
                                                                mode="val")
-                val_losses, val_acc = out
+                val_losses, val_acc, _, _= out
                 avg_loss_val = sum(val_losses)/len(val_losses)
                 avg_acc_val = sum(val_acc)/len(val_acc)
 
@@ -309,11 +317,14 @@ class Engine():
                 last_epoch_model_save_path = os.path.join(self.exp_folder, "weights", "last_epoch.pth")
                 self.save_ckpt(last_epoch_model_save_path, epoch, self.model, self.optimizer)
 
-                if avg_acc_val > min_acc_val:
+                if (avg_acc_val > min_acc_val) and (avg_loss_val < min_loss_val):
                     # Save the model with best validation accuracy
                     print("Saving the best model...")
                     best_model_save_path = os.path.join(self.exp_folder, "weights", "best.pth")
                     self.save_ckpt(best_model_save_path, epoch, self.model, self.optimizer)
+
+                    min_acc_val = avg_acc_val
+                    min_loss_val = avg_loss_val
 
                 print(f"Epoch: {epoch}/{epochs}\t\
                     lr: {current_lr}\t\
@@ -322,7 +333,7 @@ class Engine():
                     train acc: {avg_acc_train:.4f}\t\
                     val-time: {elapsed_time_val:.2f}\t\
                     val loss: {avg_loss_val:.4f}\t\
-                    val acc: {avg_acc_val:.4f}\t")
+                    val acc: {avg_acc_val:.4f}\t\n")
     
     @timer
     def test(self):
@@ -370,25 +381,20 @@ class Engine():
         plt.title('Confusion Matrix')
         plt.savefig(os.path.join(self.exp_folder, "confusion_matrix.jpg"))
 
-        fpr, tpr, thresholds = roc_curve(true_labels, predicted_labels)
-        roc_auc = auc(fpr, tpr)
-
-        plt.figure()
-        plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
-        plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.title('ROC Curve')
-        plt.legend(loc="lower right")
-        plt.savefig(os.path.join(self.exp_folder, "roc_curve.jpg"))
-
         metrics = {'Accuracy': accuracy, 'Precision': precision, 'Recall': recall, 'F1 Score': f1}
         names = list(metrics.keys())
         values = list(metrics.values())
 
         plt.figure()
-        plt.bar(names, values)
+        bars = plt.bar(names, values)
         plt.xlabel('Metrics')
         plt.ylabel('Value')
         plt.title('Performance Metrics')
+
+        # Adding values on top of each bar
+        for bar in bars:
+            yval = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width()/2, yval, round(yval, 2), va='bottom', ha='center')
+
+        # Save the plot as an image file
         plt.savefig(os.path.join(self.exp_folder, "acc_precision_recall_f1.jpg"))
