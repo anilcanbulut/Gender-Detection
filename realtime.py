@@ -29,6 +29,7 @@ def main(args):
     while True:
         t_start = time.time()
         ret, frame = cap.read()
+        t_read = time.time()
         
         if not ret:
             break
@@ -78,13 +79,21 @@ def main(args):
             offset_1, offset_2 = int(h*0.08), int(h*0.06)
             cv2.rectangle(new_frame, (x1, y1), (x2, y1+offset_1), (0, 255, 0), -1)
             new_frame = cv2.putText(new_frame, f'{LABELS[label_id]} {conf:.2f}', (x1, y1+offset_2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
-            
+        
+        t_end = time.time()
 
+        new_frame = cv2.putText(new_frame, f'Face-detector: {(t_facedet_end - t_facedet_start)*1000:.0f} ms', 
+                                (int(frame_width*0.05), int(frame_height*0.05)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
+        new_frame = cv2.putText(new_frame, f'Gender-detector: {(t_genderdet_end - t_genderdet_start)*1000:.0f} ms', 
+                                (int(frame_width*0.05), int(frame_height*0.1)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
+        new_frame = cv2.putText(new_frame, f'Read-frame: {(t_read - t_start)*1000:.0f} ms', 
+                                (int(frame_width*0.05), int(frame_height*0.15)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
+        new_frame = cv2.putText(new_frame, f'Overall FPS: {1/(t_end - t_start):.0f}', 
+                                (int(frame_width*0.05), int(frame_height*0.2)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
         cv2.imshow("Output", new_frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
         
-        t_end = time.time()
         print(f"FPS: {1/(t_end-t_start):.2f}\tFace Detection: {(t_facedet_end - t_facedet_start)*1000:.2f}ms \t Gender Detection: {(t_genderdet_end - t_genderdet_start)*1000:.2f}ms")
 
     cv2.destroyAllWindows()
