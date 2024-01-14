@@ -8,4 +8,4 @@ GENERAL:
   INPUT_W: 100
   INPUT_H: 100
   BATCH_SIZE: 128
-  PRETRAINED_MODEL:
+  PRETRAINED_MODEL: "exps/efficientnet_b1/weights/best.pth"
