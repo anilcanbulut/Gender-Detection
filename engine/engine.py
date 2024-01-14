@@ -78,8 +78,12 @@ class Engine():
             if self.cfg["MODE"].lower() == "train":
                 model.classifier[1] = nn.Linear(model.classifier[1].in_features, 2)
                 # model.fc = nn.Linear(model.fc.in_features, 2)
- 
-            print(f"Using {model_name} with Imagenet weights")
+                print(f"Using {model_name} with Imagenet weights")
+            elif self.cfg["MODE"].lower() == "test":
+                model.classifier[1] = nn.Linear(model.classifier[1].in_features, 2)
+                ckpt = self.load_checkpoint("models/efficientnet_b1.pth")
+                model = self.load_model(model, ckpt["MODEL_STATE_DICT"])
+                print("Using EfficientNet-b1 weights")
 
         if torch.cuda.is_available():
             model.cuda()
