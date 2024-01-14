@@ -1,5 +1,9 @@
 venv/
 exps/
 data/
+
+__pycache__
+
 *.png
 *.pth
+
